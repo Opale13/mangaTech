@@ -7,21 +7,19 @@ class FoodDb():
         self._driver = GraphDatabase.driver("bolt://localhost:11004", auth=("neo4j", "dblocal"))
         
 
-    def addManga (self, manga_name, editor_name, type_name, author):
+    def addManga (self, manga_name, editor_name, type_name, author_firstname, author_lastname):
         '''Allows you to add a manga with its editor, type and author
         
         Arguments:
             manga_name {string} -- defines the name of the manga (unique)
             editor_name {string} -- defines the editor of the editor (unique)
             type_name {string} -- defines the type of the editor (unique)
-            author {dictionnary} -- defines the author's firstname (unique) and author's lastname of the editor
+            author_firstname {string} -- defines the author's firstname (unique)
+            author_lastname {string} -- defines the author's lastname 
         '''
 
         try:
             session = self._driver.session()
-
-            author_firstname = author['firstname']
-            author_lastname = author['lastname']
 
             try:
                 request = 'CREATE (:Manga {name: {manga_name}})'
@@ -45,15 +43,15 @@ class FoodDb():
                 request = 'CREATE (:Author {firstname: {author_firstname}, lastname: {author_lastname}})'
                 session.run(request, {'author_firstname': author_firstname, 'author_lastname': author_lastname})        
             except:
-                pass
-
+                pass          
+            
             try:
                 #Manga-[TYPE]->Type
                 request = "MATCH (m:Manga) WHERE m.name = '{}' MATCH (t:Type) WHERE t.name = '{}' CREATE (m) -[r:TYPE]-> (t)".format(manga_name, type_name)
                 session.run(request)
             except:
-                pass
-
+                pass        
+            
             try:
                 #Author-[CREATE]->Manga
                 request = "MATCH (a:Author) WHERE a.firstname = '{}' AND a.lastname = '{}' MATCH (m:Manga) WHERE m.name = '{}' CREATE (a) -[r:CREATE]-> (m)".format(author_firstname, author_lastname, manga_name)
@@ -67,11 +65,10 @@ class FoodDb():
                 session.run(request)
             except:
                 pass
-            
+
             session.close()
         
         except:
-            print("Verify the autor's parameters")
             session.close()
 
 
