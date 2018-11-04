@@ -1,10 +1,11 @@
 from neo4j import GraphDatabase, basic_auth
 
-class FoodDb():
+class FoodDb():    
+    #TODO arranger l'ajout du lien s'il est déjà existant
 
     def __init__ (self):
         self._driver = GraphDatabase.driver("bolt://localhost:11004", auth=("neo4j", "dblocal"))
-        self._session = self._driver.session()
+        
 
     def addManga (self, manga_name, editor_name, type_name, author):
         '''Allows you to add a manga with its editor, type and author
@@ -17,50 +18,61 @@ class FoodDb():
         '''
 
         try:
+            session = self._driver.session()
+
             author_firstname = author['firstname']
             author_lastname = author['lastname']
 
             try:
                 request = 'CREATE (:Manga {name: {manga_name}})'
-                self._session.run(request, {'manga_name': manga_name})        
+                session.run(request, {'manga_name': manga_name})        
             except:
                 pass
 
             try:
                 request = 'CREATE (:Editor {name: {editor_name}})'
-                self._session.run(request, {'editor_name': editor_name})        
+                session.run(request, {'editor_name': editor_name})        
             except:
                 pass
             
             try:
                 request = 'CREATE (:Type {name: {type_name}})'
-                self._session.run(request, {'type_name': type_name})        
+                session.run(request, {'type_name': type_name})        
             except:
                pass
             
             try:
                 request = 'CREATE (:Author {firstname: {author_firstname}, lastname: {author_lastname}})'
-                self._session.run(request, {'author_firstname': author_firstname, 'author_lastname': author_lastname})        
+                session.run(request, {'author_firstname': author_firstname, 'author_lastname': author_lastname})        
             except:
                 pass
 
             try:
                 #Manga-[TYPE]->Type
                 request = "MATCH (m:Manga) WHERE m.name = '{}' MATCH (t:Type) WHERE t.name = '{}' CREATE (m) -[r:TYPE]-> (t)".format(manga_name, type_name)
-                self._session.run(request)
-
-                #Author-[CREATE]->Manga
-                request = "MATCH (a:Author) WHERE a.firstname = '{}' AND a.lastname = '{}' MATCH (m:Manga) WHERE m.name = '{}' CREATE (a) -[r:CREATE]-> (m)".format(author_firstname, author_lastname, manga_name)
-                self._session.run(request)
-
-                #Editor-[EDITS]->Manga
-                request = "MATCH (e:Editor) WHERE e.name = '{}' MATCH (m:Manga) WHERE m.name = '{}' CREATE (e) -[r:EDITS]-> (m)".format(editor_name, manga_name)
-                self._session.run(request)
+                session.run(request)
             except:
                 pass
+
+            try:
+                #Author-[CREATE]->Manga
+                request = "MATCH (a:Author) WHERE a.firstname = '{}' AND a.lastname = '{}' MATCH (m:Manga) WHERE m.name = '{}' CREATE (a) -[r:CREATE]-> (m)".format(author_firstname, author_lastname, manga_name)
+                session.run(request)
+            except:
+                pass
+
+            try:
+                #Editor-[EDITS]->Manga
+                request = "MATCH (e:Editor) WHERE e.name = '{}' MATCH (m:Manga) WHERE m.name = '{}' CREATE (e) -[r:EDITS]-> (m)".format(editor_name, manga_name)
+                session.run(request)
+            except:
+                pass
+            
+            session.close()
         
         except:
             print("Verify the autor's parameters")
+            session.close()
 
 
     def addTom (self, manga_name, tom_title, tom_closingDate, tom_price, tom_possessed):
@@ -75,27 +87,30 @@ class FoodDb():
         '''
 
         try:
+            session = self._driver.session()
+
             request = 'MATCH (m:Manga {name: {manga_name}}) RETURN m'
-            result = self._session.run(request, {'manga_name': manga_name})   
+            result = session.run(request, {'manga_name': manga_name})   
 
             #Verify if the manga exists
             if (result.single() == None):
-                raise Exception('The manga does not exist')    
+                raise Exception('The manga does not exist') 
             
             try:
                 request = 'CREATE (:Tom {title: {tom_title}, closingDate: {tom_closingDate}, price: {tom_price}, possessed: {tom_possessed}})'
-                self._session.run(request, {'tom_title': tom_title, 'tom_closingDate': tom_closingDate, 'tom_price': tom_price, 'tom_possessed': tom_possessed})        
+                session.run(request, {'tom_title': tom_title, 'tom_closingDate': tom_closingDate, 'tom_price': tom_price, 'tom_possessed': tom_possessed})        
             except:
                 pass
             
             try:
-                #TODO arranger l'ajout du lien s'il est déjà existant
-
                 #Manga-[CONTAINS]->Tom
                 request = "MATCH (m:Manga) WHERE m.name = '{}' MATCH (t:Tom) WHERE t.title = '{}' CREATE (m) -[r:CONTAINS]-> (t)".format(manga_name, tom_title)
-                self._session.run(request)
+                session.run(request)
             except:
                 pass
+            
+            session.close()
 
         except Exception as e:
             print(e)
+            session.close()
