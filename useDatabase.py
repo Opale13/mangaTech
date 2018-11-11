@@ -81,3 +81,43 @@ def calculPrice(manga_name):
 
     except Exception as e:
         print(e)
+
+def calculStat():
+    dico_stat = {}
+
+    try:
+        driver = GraphDatabase.driver("bolt://localhost:11004", auth=("neo4j", "dblocal"))
+
+        request = "MATCH (e:Editor) -[r:EDITS]-> (m:Manga) -[s:TYPE]-> (t:Type) RETURN e, r, m, s, t"
+        session = driver.session()
+        result = list(session.run(request))
+        session.close()
+
+    except Exception as e:
+        print(e)
+
+    for i in range(len(result)):
+        editor = result[i]['e']
+        manga = result[i]['m']
+        type = result[i]['t']
+
+        if editor['name'] not in dico_stat:
+            dico_stat[editor['name']] = {}
+            dico_stat[editor['name']][type['name']] = []
+            dico_stat[editor['name']][type['name']].append(manga['name'])
+
+        else:
+            if type['name'] in dico_stat[editor['name']]:
+                dico_stat[editor['name']][type['name']].append(manga['name'])
+
+            else:
+                dico_stat[editor['name']][type['name']] = []
+                dico_stat[editor['name']][type['name']].append(manga['name'])
+
+    # print statistic
+    for key, value in dico_stat.items():
+        print('->{}'.format(key))
+
+        for value_key, value_value in value.items():
+            print('\t->{}'.format(value_key))
+            print('\t\t->{}'.format(len(value_value)))
