@@ -11,58 +11,54 @@ def searchManga(driver, manga_type, author):
     author_firstname = ''
     author_lastname = ''
 
+    if not isinstance(manga_type, str):
+        raise Exception("manga_type is not a string")
+
+    if 'firstname' not in author:
+        raise Exception("firstname is not in author dictionnary")
+    elif not isinstance(author['firstname'], str):
+        raise Exception("author_firstname is not a string")            
+    else:
+        author_firstname = author['firstname']
+    
+    if 'lastname' not in author:
+        raise Exception("lastname is not in author dictionnary")
+    elif not isinstance(author['lastname'], str):
+        raise Exception("author_lastname is not a string")            
+    else:
+        author_lastname = author['lastname']
+
+
     try:
-        if not isinstance(manga_type, str):
-            raise Exception("manga_type is not a string")
+        request = "MATCH (t:Type) <-[r:TYPE]- (m:Manga) <-[s:CREATE]- (a:Author) WHERE t.name={manga_type} AND a.firstname={author_firstname} AND a.lastname={author_lastname} RETURN m"
+        session = driver.session()
+        result = list(session.run(request, {'manga_type': manga_type, 'author_firstname': author_firstname, 'author_lastname': author_lastname}))
+        session.close()      
 
-        if 'firstname' not in author:
-            raise Exception("firstname is not in author dictionnary")
-        elif not isinstance(author['firstname'], str):
-            raise Exception("author_firstname is not a string")            
-        else:
-            author_firstname = author['firstname']
-        
-        if 'lastname' not in author:
-            raise Exception("lastname is not in author dictionnary")
-        elif not isinstance(author['lastname'], str):
-            raise Exception("author_lastname is not a string")            
-        else:
-            author_lastname = author['lastname']
+        # If the author does not exist, we send all manga for the type
+        if (len(result) == 0):
+            try:
+                request = "MATCH (t:Type) <-[r:TYPE]- (m:Manga) WHERE t.name={manga_type} RETURN m"
+                session = driver.session()
+                result = list(session.run(request, {'manga_type': manga_type}))
+                session.close()        
+                
+                if (len(result) > 0):
+                    for i in range(len(result)):
+                        print(result[i]['m']['name'])
+                
+                else:
+                    print("No manga found for {}".format(manga_type))
 
+            except:
+                session.close() 
 
-        try:
-            request = "MATCH (t:Type) <-[r:TYPE]- (m:Manga) <-[s:CREATE]- (a:Author) WHERE t.name={manga_type} AND a.firstname={author_firstname} AND a.lastname={author_lastname} RETURN m"
-            session = driver.session()
-            result = list(session.run(request, {'manga_type': manga_type, 'author_firstname': author_firstname, 'author_lastname': author_lastname}))
-            session.close()      
-
-            # If the author does not exist, we send all manga for the type
-            if (len(result) == 0):
-                try:
-                    request = "MATCH (t:Type) <-[r:TYPE]- (m:Manga) WHERE t.name={manga_type} RETURN m"
-                    session = driver.session()
-                    result = list(session.run(request, {'manga_type': manga_type}))
-                    session.close()        
-                    
-                    if (len(result) > 0):
-                        for i in range(len(result)):
-                            print(result[i]['m']['name'])
-                    
-                    else:
-                        print("No manga found for {}".format(manga_type))
-
-                except:
-                    session.close() 
-
-            else:  
-                for i in range(len(result)):
-                    print(result[i]['m']['name'])
-        
-        except:
-            session.close()   
-
-    except Exception as e:
-        print(e)
+        else:  
+            for i in range(len(result)):
+                print(result[i]['m']['name'])
+    
+    except:
+        session.close()   
 
 
 def calculPrice(driver, manga_name):
