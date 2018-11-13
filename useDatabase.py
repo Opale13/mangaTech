@@ -45,17 +45,17 @@ def searchManga(driver, manga_type, author):
                 
                 if (len(result) > 0):
                     for i in range(len(result)):
-                        print(result[i]['m']['name'])
+                        print("\t\t" + result[i]['m']['name'])
                 
                 else:
-                    print("No manga found for {}".format(manga_type))
+                    print("\t\tNo manga found for {}".format(manga_type))
 
             except:
                 session.close() 
 
         else:  
             for i in range(len(result)):
-                print(result[i]['m']['name'])
+                print("\t\t" + result[i]['m']['name'])
     
     except:
         session.close()   
@@ -81,30 +81,62 @@ def calculPrice(driver, manga_name):
             request = "MATCH (to:Tom) <-[r:CONTAINS]- (m:Manga) WHERE m.name={manga_name} RETURN to ORDER BY to.title"
             session = driver.session()
             result = list(session.run(request, {'manga_name': manga_name}))
-            session.close()
+            session.close()        
+
+            if (len(result) > 0):
+                for i in range(len(result)):
+                    manga = result[i]['to']
+                    total_price += manga['price']
+
+                    if (manga['possessed']):
+                        price_possessed += manga['price']
+                        price_to_paye = total_price - price_possessed            
+                
+                print("\t\tFor {}:".format(manga_name))
+                print("\t\t\tThe total price is equal to {}\u20ac".format(total_price))
+                print("\t\t\tYou have already paid: {}\u20ac".format(price_possessed))
+                print("\t\t\tYou still have to pay: {}\u20ac".format(price_to_paye))
+            
+            else:
+                print("Manga not found")
+
         except:
             session.close()
-
-        if (len(result) > 0):
-            for i in range(len(result)):
-                manga = result[i]['to']
-                total_price += manga['price']
-
-                if (manga['possessed']):
-                    price_possessed += manga['price']
-                    price_to_paye = total_price - price_possessed            
-            
-            print("For {}:".format(manga_name))
-            print("    The total price is equal to {}\u20ac".format(total_price))
-            print("    You have already paid: {}\u20ac".format(price_possessed))
-            print("    You still have to pay: {}\u20ac".format(price_to_paye))
-        
-        else:
-            print("Manga not found")
 
     except Exception as e:
         print(e)
 
 
 def calculStat(driver):
-    pass
+    dico_stat = {}
+
+    request = "MATCH (s:Store) <-[r:PURCHASED]- (t:Tom) RETURN s, r, t"
+    session = driver.session()
+    result = list(session.run(request))
+    session.close()
+
+    if len(result) > 0:
+        for i in range(len(result)):
+            if result[i]['s']['name'] not in dico_stat:
+                dico_stat[result[i]['s']['name']] = {
+                    'nbr': 0,
+                    'data': []
+                }
+
+            dico_stat[result[i]['s']['name']]['nbr'] += 1
+
+            dico_stat[result[i]['s']['name']]['data'].append({
+                'tom': result[i]['t']['title'],
+                'price': result[i]['t']['price'],
+                'purchaseDate': result[i]['r']['purchaseDate']
+            })
+
+    for key, value in dico_stat.items():
+        print("\t" + key)
+        print("\t" + str(value['nbr']))
+
+        for value_value in value['data']:
+            print("\t\t" + value_value['tom'])
+            print("\t\t\t" + str(value_value['price']))
+            print("\t\t\t" + value_value['purchaseDate'])
+

@@ -1,5 +1,5 @@
 from foodDb import FoodDb
-from useDatabase import *
+from useDatabase import searchManga, calculPrice, calculStat
 #localhost: bolt://localhost:11004
 
 #searchManga(driver, 'Seinen', {'firstname': 'ss', 'lastname': 'Ishida'})
@@ -89,10 +89,29 @@ while True:
         author_lastname = input("\t>Enter author's lastname (like Oda): ")
 
         try:
-            searchManga(driver, type_name, {
-                'firstname': author_firstname,
-                'lastname': author_lastname
+            searchManga(driver, type_name.title(), {
+                'firstname': author_firstname.title(),
+                'lastname': author_lastname.title()
             })
+        
+        except Exception as e:
+            print(e)
+
+    elif mode == 'calculprice':
+        print(">Calcul price:")
+        manga_name = input("\t>Enter manga's name (like One Piece): ")
+
+        try:
+            calculPrice(driver, manga_name.title())
+        
+        except Exception as e:
+            print(e)
+        
+    elif mode == 'calculstat':
+        print(">Calcul statistic:")
+
+        try:
+            calculStat(driver)
         
         except Exception as e:
             print(e)
@@ -105,6 +124,8 @@ while True:
         print('\taddtom: add tom in database')
         print('\taddstore: if you have bought a tom, you can add a store')
         print('\tsearchmanga: ')
+        print('\tcalculprice: ')
+        print('\tcalculstat: ')
     
     else:
         print('>Command not found')
